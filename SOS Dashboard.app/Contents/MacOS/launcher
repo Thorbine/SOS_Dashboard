@@ -1,0 +1,25 @@
+#!/bin/bash
+# Startet das SOS Dashboard ohne Terminalfenster (Doppelklick auf "SOS Dashboard.app").
+# Das Programm selbst liegt drei Ordner hoeher (neben app.py) und wird per Update erneuert.
+DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$DIR" || exit 1
+# Aus dem Finder gestartete Apps haben nur einen kleinen PATH: gaengige Python-Orte ergaenzen
+export PATH="/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
+PY="$(command -v python3)"
+fehler() { osascript -e "display dialog \"$1\" buttons {\"OK\"} default button 1 with icon stop with title \"SOS Dashboard\"" >/dev/null; exit 1; }
+[ -z "$PY" ] && fehler "Python wurde nicht gefunden. Bitte Python 3.11 oder neuer von python.org installieren."
+
+# Fehlende Pakete einmalig nachinstallieren
+if ! "$PY" -c "import webview, reportlab, svglib, PIL, certifi, pymupdf" 2>/dev/null; then
+  "$PY" -m pip install -q --prefer-binary -r requirements.txt 2>/tmp/sos_dashboard_pip.log \
+    || fehler "Die Pakete konnten nicht installiert werden (Internetverbindung?). Details: /tmp/sos_dashboard_pip.log"
+fi
+
+ERR="$(mktemp)"
+"$PY" app.py 2>"$ERR"
+if [ $? -ne 0 ]; then
+  cp "$ERR" "$HOME/sos-dashboard-startfehler.txt"
+  rm -f "$ERR"
+  fehler "Das Programm ist abgestürzt. Details: sos-dashboard-startfehler.txt im Benutzerordner."
+fi
+rm -f "$ERR"

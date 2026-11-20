@@ -1,0 +1,9 @@
+[
+ {"brand":"wilson","color":"#c00000","name":"Blade 98 16x19 V10","kopfIn":"98","kopfCm":"632","gewicht":"305","besaitung":"16/19","balance":"320","preis":"289,95","uvp":"290,00"},
+ {"brand":"head","color":"#000000","name":"Speed MP L 2024 Sonderedition","kopfIn":"100","kopfCm":"645","gewicht":"280","besaitung":"16/19","balance":"","preis":"259,95","uvp":""},
+ {"brand":"babolat","color":"#1a5fa8","name":"Pure Drive","kopfIn":"","kopfCm":"645","gewicht":"","besaitung":"","balance":"320","preis":"249,95","uvp":"269,00"},
+ {"brand":"yonex","color":"#003087","name":"Ezone 98 Äöü ß","kopfIn":"98","kopfCm":"632","gewicht":"305","besaitung":"16/19","balance":"325","preis":"269,95","uvp":"279,95"},
+ {"brand":"tecnifibre","color":"#1a2b6b","name":"TF40 305","kopfIn":"98","kopfCm":"632","gewicht":"305","besaitung":"16/19","balance":"320","preis":"229,95","uvp":""},
+ {"brand":"wilson","color":"#2e7d32","name":"Clash 100 V2","kopfIn":"100","kopfCm":"645","gewicht":"295","besaitung":"16/19","balance":"315","preis":"269,95","uvp":"279,95"},
+ {"brand":"head","color":"#e65100","name":"Gravity Pro","kopfIn":"100","kopfCm":"645","gewicht":"295","besaitung":"16/19","balance":"315","preis":"249,95","uvp":""}
+]

@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SOS Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="topbar">
+    <img class="logo" src="../assets/sos-logo.svg" alt="" onerror="this.remove()">
+    <h1>SOS Dashboard</h1>
+    <nav id="nav" class="nav"></nav>
+    <span class="spacer"></span>
+    <span id="save-status" class="save-status"></span>
+  </header>
+
+  <div id="modules" class="modules"></div>
+
+  <div id="panel-root"></div>
+  <div id="modal-root"></div>
+  <div id="toast" class="toast" hidden></div>
+
+  <script src="shell.js"></script>
+</body>
+</html>

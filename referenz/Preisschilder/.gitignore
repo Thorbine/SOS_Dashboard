@@ -1,0 +1,7 @@
+# Benutzerdaten (Einstellungen, Listen) und lokale Version bleiben lokal
+daten/
+version.txt
+__pycache__/
+*.pyc
+*.neu
+.DS_Store

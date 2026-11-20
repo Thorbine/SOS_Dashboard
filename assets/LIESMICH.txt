@@ -1,0 +1,8 @@
+In diesen Ordner gehören:
+
+  sos-logo.svg            Das SOS-Logo. Es erscheint in der Kopfzeile der App und oben links in den PDFs.
+                          Fehlt die Datei, steht dort stattdessen der Firmenname als Text.
+  sos-logo.ico            Optional. Das Icon der .exe. build.bat erzeugt es aus sos-logo.svg,
+                          wenn es noch nicht da ist.
+  vorlagen/Reklamation.pdf  Optional. Das bisherige interne Formular als Optik-Referenz.
+                          Die App braucht es zur Laufzeit nicht.

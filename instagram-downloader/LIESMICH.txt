@@ -1,0 +1,14 @@
+Instagram Downloader (Mac)
+
+Start: Doppelklick auf "Instagram Downloader.app" (oder start.command).
+Voraussetzung: Python 3.11 oder neuer von python.org (enthaelt tkinter). Beim ersten Start wird yt-dlp
+automatisch installiert (Internet noetig).
+
+Benutzung: Links einfuegen, Ordner waehlen, "Herunterladen".
+Verlangt Instagram eine Anmeldung, im Browser bei Instagram anmelden und unter "Anmeldung aus" diesen Browser waehlen
+(Safari braucht ggf. Vollzugriff auf Festplatte fuer Terminal/Python in den Systemeinstellungen).
+Funktioniert es nicht mehr: "yt-dlp aktualisieren" klicken, Instagram aendert oft etwas.
+Beim ersten Start meldet macOS eventuell "nicht verifizierter Entwickler": Rechtsklick auf die App, Oeffnen.
+
+Rechtliches: Nur eigene Videos oder solche mit Erlaubnis laden.
+Tests: python -m pytest tests

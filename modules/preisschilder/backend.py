@@ -38,6 +38,20 @@ def _clean(item: dict) -> dict:
     return {k: v for k, v in item.items() if not str(k).startswith("_") and k not in ("anzahl", "druck")}
 
 
+OLD_BRANDS = {"wilson": "Wilson", "head": "HEAD", "babolat": "Babolat", "yonex": "Yonex", "tecnifibre": "Tecnifibre"}
+
+
+def convert_racket(card: dict) -> dict:
+    """Ein Schild aus dem alten Schläger-Generator (brand, color) in das Format des Dashboards (marke, farbe)."""
+    out = {k: v for k, v in card.items() if k not in ("brand", "color", "count")}
+    if "marke" not in out and card.get("brand"):
+        brand = str(card["brand"])
+        out["marke"] = OLD_BRANDS.get(brand.lower(), brand[:1].upper() + brand[1:])
+    if "farbe" not in out and card.get("color"):
+        out["farbe"] = card["color"]
+    return out
+
+
 class Backend:
     def __init__(self, ctx):
         self.ctx = ctx
@@ -329,7 +343,7 @@ class Backend:
             if not isinstance(pages, list) or not all(isinstance(p, dict) and isinstance(p.get("cards", p.get("schilder")), list) for p in pages):
                 raise ValueError("Das ist keine Datei mit gespeicherten Seiten.")
             fixed = [{"name": str(p.get("name", ""))[:40], "date": p.get("date") or p.get("datum", ""),
-                      "cards": p.get("cards", p.get("schilder"))} for p in pages]
+                      "cards": [convert_racket(c) for c in p.get("cards", p.get("schilder")) if isinstance(c, dict)]} for p in pages]
             return {"ok": True, "seiten": fixed}
         return self._guard(action)
 

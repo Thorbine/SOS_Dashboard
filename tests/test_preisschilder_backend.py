@@ -147,3 +147,19 @@ def test_take_over_old_data_without_loss(api, monkeypatch):
 def test_take_over_rejects_wrong_folder(api, monkeypatch, tmp_path):
     monkeypatch.setattr(api._ctx, "choose_folder", lambda: str(tmp_path))
     assert api.preisschilder_uebernahme_pruefen()["ok"] is False
+
+
+def test_import_of_export_from_old_racket_generator(api, monkeypatch, tmp_path):
+    """Die Export-Datei des alten HTML-Generators (Liste mit brand/color) wird ins Format des Dashboards umgesetzt."""
+    old = [{"name": "Wilson Frühjahr", "date": "12.11.2026", "count": 2, "cards": [
+        {"brand": "wilson", "color": "#c00000", "name": "Blade 98 16x19 V10", "kopfIn": "98", "kopfCm": "632", "gewicht": "305",
+         "besaitung": "16/19", "balance": "320", "preis": "289,95", "uvp": "290,00"},
+        {"brand": "tecnifibre", "color": "#1a2b6b", "name": "TF40", "kopfIn": "98", "kopfCm": "632", "gewicht": "305", "besaitung": "16/19", "balance": "", "preis": "229,95", "uvp": ""}]}]
+    target = tmp_path / "SOS_Preisschilder_2026-11-12.json"
+    target.write_text(json.dumps(old), encoding="utf-8")
+    monkeypatch.setattr(api._ctx, "choose_file", lambda file_types=(): str(target))
+    res = api.preisschilder_seiten_importieren()
+    assert res["ok"]
+    cards = res["seiten"][0]["cards"]
+    assert [(c["marke"], c["farbe"], c["name"]) for c in cards] == [("Wilson", "#c00000", "Blade 98 16x19 V10"), ("Tecnifibre", "#1a2b6b", "TF40")]
+    assert "brand" not in cards[0] and "color" not in cards[0] and res["seiten"][0]["name"] == "Wilson Frühjahr"

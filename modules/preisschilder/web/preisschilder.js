@@ -42,6 +42,7 @@ const PS = {
   pages: [], clip: [], search: '', searchOpen: false,
   saveTimers: {}, dirty: new Set(), previewTimer: null, edit: -1,
 };
+PS.ready = new Promise((resolve) => { PS.resolveReady = resolve; });
 
 /* ---------- Schnittstelle: App oder Demo ---------- */
 
@@ -628,28 +629,32 @@ function psPaintSearch() {
 
 /* ---------- Einstellungen ---------- */
 
-function psSettingsDialog() {
+async function psSettingsSection() {
+  await PS.ready;
+  if (!PS.cfg) return h('p', { class: 'muted' }, 'Die Preisschilder sind nicht verfügbar (Datenordner nicht erreichbar).');
   const c = JSON.parse(JSON.stringify(PS.cfg));
-  const num = (obj, key, w) => h('input', { type: 'text', value: String(obj[key]), style: 'width:80px', oninput: (e) => { obj[key] = e.target.value.replace(',', '.'); } });
+  const num = (obj, key) => h('input', { type: 'text', value: String(obj[key]), style: 'width:80px', oninput: (e) => { obj[key] = e.target.value.replace(',', '.'); } });
   const rows = Object.entries(PS_TYPES).map(([typ, t]) => h('tr', {}, h('td', {}, t.title), h('td', {}, num(c[typ], 'breite')), h('td', {}, num(c[typ], 'hoehe'))));
+  const brandBox = h('div', {});
+  const newName = h('input', { placeholder: 'Neue Marke', style: 'width:140px' });
   const brandRows = () => Object.entries(c.marken).map(([name, v]) => h('div', { class: 'saved-row' }, h('b', { style: 'width:110px' }, name),
     h('input', { type: 'color', value: v.farbe, oninput: (e) => { v.farbe = e.target.value; }, style: 'width:36px;height:26px;padding:0;border:0' }),
     h('span', { class: 'grow muted' }, 'Logo: Schläger/' + name.toLowerCase().replace(/ /g, '') + '.png'),
     h('button', { class: 'mini-btn', onclick: () => { delete c.marken[name]; rebuild(); } }, '✕')));
-  const brandBox = h('div', {});
-  const newName = h('input', { placeholder: 'Neue Marke', style: 'width:140px' });
   const rebuild = () => brandBox.replaceChildren(...brandRows());
   rebuild();
-  const err = h('span', { class: 'error' });
+  const msg = h('span', { class: 'error' });
   const save = async () => {
+    msg.className = 'error'; msg.textContent = '';
     const res = await psCall('einstellungen_speichern', c);
-    if (!res.ok) { err.textContent = res.message || 'Speichern fehlgeschlagen.'; return; }
+    if (!res.ok) { msg.textContent = res.message || 'Speichern fehlgeschlagen.'; return; }
     PS.cfg = res.einstellungen;
     Object.keys(PS.info).forEach((k) => delete PS.info[k]);
     for (const typ of Object.keys(PS_TYPES)) { const info = await psCall('blatt_info', typ); PS.info[typ] = info.ok ? info : { pro_blatt: 0 }; }
-    closeModal(); psRender(); psPreviewSoon(); toast('Gespeichert.');
+    msg.className = 'hint'; msg.textContent = 'Gespeichert.';
+    toast('Gespeichert.');
   };
-  showModal({ title: 'Einstellungen Preisschilder', size: 'wide', body: h('div', { class: 'stack' },
+  return h('div', { class: 'stack' },
     h('div', { class: 'section-bar' }, 'Schildmaße (mm)'),
     h('table', { class: 'ptable', style: 'max-width:420px' }, h('thead', {}, h('tr', {}, h('th', {}, 'Typ'), h('th', {}, 'Breite'), h('th', {}, 'Höhe'))), h('tbody', {}, rows)),
     h('p', { class: 'muted small' }, 'Die Schläger-Schilder werden 2 Spalten breit gedruckt; ihre Höhe stammt aus dem Ausdruck des HTML-Generators (68,3 mm).'),
@@ -659,11 +664,12 @@ function psSettingsDialog() {
     h('div', { class: 'section-bar' }, 'Schläger-Marken und Standardfarben'), brandBox,
     h('div', { class: 'row' }, newName, h('button', { class: 'btn', onclick: () => { const n = newName.value.trim(); if (n) { c.marken[n] = { farbe: '#555555' }; newName.value = ''; rebuild(); } } }, '+ Marke')),
     h('p', { class: 'muted small' }, 'Eine neue Marke bekommt ihr weißes Logo, indem die PNG-Datei (z. B. lacoste.png) im Ordner logos/Schläger liegt.'),
+    h('div', { class: 'row' }, h('button', { class: 'btn primary', onclick: save }, 'Speichern'), msg),
     h('div', { class: 'section-bar' }, 'Daten aus dem alten Programm'),
-    h('div', { class: 'row' }, h('button', { class: 'btn', onclick: psTakeOver }, 'Daten aus dem alten Preisschilder-Programm übernehmen …')),
-    err),
-  foot: [h('span', { class: 'spacer' }), h('button', { class: 'btn', onclick: closeModal }, 'Abbrechen'), h('button', { class: 'btn primary', onclick: save }, 'Speichern')] });
+    h('div', { class: 'row' }, h('button', { class: 'btn', onclick: psTakeOver }, 'Daten aus dem alten Preisschilder-Programm übernehmen …')));
 }
+
+registerSettingsSection({ id: 'preisschilder', title: 'Preisschilder', build: psSettingsSection });
 
 async function psTakeOver() {
   await psSaveAll();
@@ -676,6 +682,7 @@ async function psTakeOver() {
     Object.keys(PS.lists).forEach((k) => delete PS.lists[k]);
     Object.keys(PS.logos).forEach((k) => delete PS.logos[k]);
     await psEnsure(PS.tab); psRender(); psPreviewSoon();
+    if (activeModule === 'einstellungen') openSettings('preisschilder');
     toast(res.kopiert + ' Dateien übernommen, ' + res.uebersprungen + ' übersprungen.', 5000);
   };
   const buttons = [h('span', { class: 'spacer' }), h('button', { class: 'btn', onclick: closeModal }, 'Abbrechen')];
@@ -692,7 +699,7 @@ function psTabs() {
   return h('div', { class: 'tabs' },
     Object.entries(PS_TYPES).map(([id, x]) => h('button', { class: id === PS.tab ? 'active' : '', onclick: async () => { await psSaveNow(PS.tab); PS.tab = id; PS.edit = -1; PS.preview.seite = 0; await psEnsure(id); psRender(); psPreviewSoon(); } }, x.title)),
     h('span', { class: 'spacer' }),
-    h('button', { onclick: psSettingsDialog }, 'Einstellungen'));
+    h('button', { onclick: () => openSettings('preisschilder') }, 'Einstellungen'));
 }
 
 function psBuild() {
@@ -737,6 +744,7 @@ async function psMount(root) {
   if (!res.ok) {
     root.replaceChildren(h('div', { class: 'empty-start' }, h('div', { class: 'problem' }, h('h2', {}, 'Preisschilder nicht verfügbar'), h('p', {}, res.message || 'Der Datenordner ist nicht erreichbar.'))));
     PS.failed = true;
+    PS.resolveReady();
     return;
   }
   PS.cfg = res.einstellungen;
@@ -746,6 +754,7 @@ async function psMount(root) {
   await psEnsure(PS.tab);
   psRender();
   psPreviewSoon();
+  PS.resolveReady();
 }
 
 registerModule({

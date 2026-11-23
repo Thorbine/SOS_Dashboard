@@ -49,3 +49,8 @@ async function fmRender() {
 }
 
 registerModule({ id: 'formulare', title: 'Formulare', mount(root) { FM.root = root; return fmRender(); }, show() { if (FM.root) fmRender(); } });
+
+registerSettingsSection({ id: 'formulare', title: 'Formulare', build() {
+  return h('div', { class: 'row' }, h('button', { class: 'btn', onclick: () => fmAction(fmCall('ordner_oeffnen')) }, 'Ordner der Formulare öffnen'),
+    h('span', { class: 'muted' }, 'Eine neue PDF in diesem Ordner erscheint im Modul Formulare als Kachel.'));
+} });

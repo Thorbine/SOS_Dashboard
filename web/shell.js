@@ -8,7 +8,7 @@
 let api = null;          // window.pywebview.api, in der Browser-Vorschau null
 const modalCloseHooks = [];  // Module hängen hier an, was beim Schließen eines Dialogs aufzuräumen ist
 const MODULES = [];      // hier tragen sich die Module ein: { id, title, mount(root), show?() }
-let settingsHandler = null;  // öffnet den Einstellungsdialog (trägt ein Modul ein, bis er zentral wird)
+const SETTINGS_SECTIONS = [];  // Abschnitte des Tabs Einstellungen: { id, title, build() }, von den Modulen eingetragen
 
 /* ---------- Hilfsfunktionen ---------- */
 
@@ -173,9 +173,16 @@ function errorDialog(title, message, extra) {
 /* ---------- Module und Navigation ---------- */
 
 function registerModule(m) { MODULES.push(m); }
+function registerSettingsSection(s) { SETTINGS_SECTIONS.push(s); }
+
+// Wechselt in den Tab Einstellungen, auf Wunsch gleich zu einem Abschnitt.
+function openSettings(sectionId) {
+  if (typeof EN !== 'undefined') EN.target = sectionId || null;
+  showModule('einstellungen');
+}
 
 // Ohne App (Vorschau im Browser) gibt es kein Python, das die Module nennt. Neue Module hier eintragen.
-const DEMO_MODULES = ['hersteller', 'preisschilder', 'formulare'].map((id, i) => ({
+const DEMO_MODULES = ['hersteller', 'preisschilder', 'formulare', 'einstellungen'].map((id, i) => ({
   id, js: ['../modules/' + id + '/web/' + id + '.js'], css: ['../modules/' + id + '/web/' + id + '.css'],
 }));
 
@@ -229,7 +236,6 @@ async function boot() {
     nav.append(h('button', { 'data-m': m.id, onclick: () => showModule(m.id) }, m.title));
     await m.mount(root);
   }
-  nav.append(h('button', { onclick: () => (settingsHandler ? settingsHandler() : toast('Keine Einstellungen verfügbar.')) }, 'Einstellungen'));
   if (MODULES.length) showModule(MODULES[0].id);
 }
 

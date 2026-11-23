@@ -588,47 +588,45 @@ function addSupplierDialog() {
   });
 }
 
-async function settingsDialog() {
-  if (!state.ready) return;
-  const c = state.company;
-  const status = api ? { ...(await api.grundgeruest_status()), ...(await api.hersteller_status()) } : null;
-  const mock = (t) => () => toast('In der Vorschau ohne Funktion: ' + t);
-  const restore = () => confirmDialog('Backup zurückspielen', 'Das Backup vom ' + fmtDate(status.lastBackup) + ' laden? Der jetzige Stand wird als Datei „…-ersetzt-…“ im Datenordner aufbewahrt.', 'Backup laden',
-    async () => { await saveNow(); applyLoadResult(await api.hersteller_backup_laden()); });
-  showModal({
-    title: 'Einstellungen', size: 'medium',
-    body: [
-      h('div', { class: 'section-bar' }, 'Datenordner'),
-      h('div', { class: 'stack' },
-        h('div', { class: 'row' }, h('span', { class: 'path grow' }, api ? state.dataDir : 'C:\\Users\\Thorben\\OneDrive\\SOS-Dashboard'),
-          h('button', { class: 'btn small', onclick: api ? async () => { await saveNow(); closeModal(); chooseFolder(); } : mock('Ordner wählen') }, 'Anderen Ordner wählen')),
-        h('div', { class: 'notice' }, 'Bitte keine Passwörter speichern. Die Daten liegen unverschlüsselt im Datenordner.')),
-      h('div', { class: 'section-bar' }, 'Import und Backup'),
-      h('div', { class: 'row' },
-        h('button', { class: 'btn', onclick: importCsv }, 'Hersteller aus CSV importieren'),
-        h('button', { class: 'btn', disabled: api && !status.lastBackup, onclick: api ? restore : mock('Backup zurückspielen') }, 'Backup zurückspielen'),
-        h('span', { class: 'lab', style: 'margin:0' }, 'Letztes Backup: ' + (api ? (status.lastBackup ? fmtDate(status.lastBackup) : 'noch keines') : 'heute'))),
-      h('div', { class: 'section-bar' }, 'Preisschilder und Formulare'),
-      h('div', { class: 'row' },
-        h('button', { class: 'btn', onclick: () => { closeModal(); if (typeof psSettingsDialog === 'function' && PS.cfg) psSettingsDialog(); else toast('Die Preisschilder-Einstellungen stehen im Modul Preisschilder.'); } }, 'Einstellungen Preisschilder …'),
-        h('button', { class: 'btn', onclick: () => { closeModal(); if (typeof psTakeOver === 'function' && PS.cfg) psTakeOver(); else toast('Bitte zuerst das Modul Preisschilder öffnen.'); } }, 'Daten aus dem alten Preisschilder-Programm übernehmen …'),
-        h('button', { class: 'btn', onclick: api ? () => api.formulare_ordner_oeffnen() : mock('Formulare-Ordner öffnen') }, 'Ordner der Formulare öffnen')),
-      h('div', { class: 'section-bar' }, 'Programm'),
-      h('div', { class: 'row' },
-        h('button', { class: 'btn', onclick: api ? checkUpdate : mock('Nach Aktualisierung suchen') }, 'Nach Aktualisierung suchen'),
-        h('span', { class: 'lab', style: 'margin:0' }, 'Version: ' + (api ? (status.version || 'Entwicklung') : 'Vorschau'))),
-      h('div', { class: 'section-bar' }, 'Absenderdaten für Dokumente'),
-      h('div', { class: 'frm' },
-        field('Firma', bind(c, 'name'), { cls: 'span2' }), field('Straße', bind(c, 'street'), { cls: 'span2' }),
-        field('PLZ', bind(c, 'zip')), field('Ort', bind(c, 'city')), field('Land', bind(c, 'country'), { cls: 'span2' }),
-        field('Telefon', bind(c, 'phone'), { cls: 'span2' }), field('E-Mail', bind(c, 'email'), { cls: 'span2' }),
-        field('Geschäftsführer', bind(c, 'managingDirector'), { cls: 'span2' }), field('USt-IdNr.', bind(c, 'vatId'), { cls: 'span2' }),
-        field('Handelsregister', bind(c, 'register'), { cls: 'span4' }),
-        h('label', { class: 'check span4' }, h('input', { type: 'checkbox', checked: c.showFooter, onchange: (e) => { c.showFooter = e.target.checked; } }), 'Firmendaten im Fuß anzeigen')),
-    ],
-    foot: [h('span', { class: 'hint' }, 'Änderungen werden automatisch gespeichert.'), h('button', { class: 'btn primary', onclick: closeModal }, 'Schließen')],
-  });
+// Abschnitte im Tab Einstellungen: Allgemeines (Datenordner, Programm) und die Einstellungen der Hersteller.
+const settingsMock = (t) => () => toast('In der Vorschau ohne Funktion: ' + t);
+
+async function settingsGeneral() {
+  const status = api ? await api.grundgeruest_status() : null;
+  return h('div', { class: 'stack' },
+    h('div', { class: 'section-bar' }, 'Datenordner'),
+    h('div', { class: 'row' }, h('span', { class: 'path grow' }, api ? (status.dataDir || '') : 'C:\\Users\\Thorben\\OneDrive\\SOS-Dashboard'),
+      h('button', { class: 'btn small', onclick: api ? async () => { await saveNow(); await chooseFolder(); openSettings('allgemein'); } : settingsMock('Ordner wählen') }, 'Anderen Ordner wählen')),
+    h('div', { class: 'section-bar' }, 'Programm'),
+    h('div', { class: 'row' },
+      h('button', { class: 'btn', onclick: api ? checkUpdate : settingsMock('Nach Aktualisierung suchen') }, 'Nach Aktualisierung suchen'),
+      h('span', { class: 'lab', style: 'margin:0' }, 'Version: ' + (api ? (status.version || 'Entwicklung') : 'Vorschau'))));
 }
+
+async function settingsSuppliers() {
+  if (!state.ready) return h('p', { class: 'muted' }, 'Die Herstellerdaten sind noch nicht geladen.');
+  const c = state.company;
+  const status = api ? await api.hersteller_status() : null;
+  const restore = () => confirmDialog('Backup zurückspielen', 'Das Backup vom ' + fmtDate(status.lastBackup) + ' laden? Der jetzige Stand wird als Datei „…-ersetzt-…“ im Datenordner aufbewahrt.', 'Backup laden',
+    async () => { await saveNow(); applyLoadResult(await api.hersteller_backup_laden()); openSettings('hersteller'); });
+  return h('div', { class: 'stack' },
+    h('div', { class: 'section-bar' }, 'Import und Backup'),
+    h('div', { class: 'row' },
+      h('button', { class: 'btn', onclick: importCsv }, 'Hersteller aus CSV importieren'),
+      h('button', { class: 'btn', disabled: api && !status.lastBackup, onclick: api ? restore : settingsMock('Backup zurückspielen') }, 'Backup zurückspielen'),
+      h('span', { class: 'lab', style: 'margin:0' }, 'Letztes Backup: ' + (api ? (status.lastBackup ? fmtDate(status.lastBackup) : 'noch keines') : 'heute'))),
+    h('div', { class: 'section-bar' }, 'Absenderdaten für Dokumente'),
+    h('div', { class: 'frm' },
+      field('Firma', bind(c, 'name'), { cls: 'span2' }), field('Straße', bind(c, 'street'), { cls: 'span2' }),
+      field('PLZ', bind(c, 'zip')), field('Ort', bind(c, 'city')), field('Land', bind(c, 'country'), { cls: 'span2' }),
+      field('Telefon', bind(c, 'phone'), { cls: 'span2' }), field('E-Mail', bind(c, 'email'), { cls: 'span2' }),
+      field('Geschäftsführer', bind(c, 'managingDirector'), { cls: 'span2' }), field('USt-IdNr.', bind(c, 'vatId'), { cls: 'span2' }),
+      field('Handelsregister', bind(c, 'register'), { cls: 'span4' }),
+      h('label', { class: 'check span4' }, h('input', { type: 'checkbox', checked: c.showFooter, onchange: (e) => { c.showFooter = e.target.checked; } }), 'Firmendaten im Fuß anzeigen')));
+}
+
+registerSettingsSection({ id: 'allgemein', title: 'Allgemein', build: settingsGeneral });
+registerSettingsSection({ id: 'hersteller', title: 'Hersteller', build: settingsSuppliers });
 
 // CSV-Import: Datei wählen, Vorschau zeigen, erst nach Bestätigung importieren.
 async function importCsv() {
@@ -666,7 +664,7 @@ function csvPreviewDialog(p) {
         line(p.duplicates.length, 'Duplikat wird übersprungen', 'Duplikate werden übersprungen', names(p.duplicates)),
         line(p.errors.length, 'Zeile mit Fehler', 'Zeilen mit Fehlern', names(p.errors.map((e) => 'Zeile ' + e.line + ' (' + e.message + ')')))),
       h('p', { class: 'lab' }, 'Pflichtspalte: Name. Optional: Kundennr, B2B, Reklamation, Medien. Bestehende Hersteller werden nie überschrieben.')),
-    foot: [h('span', { class: 'spacer' }), h('button', { class: 'btn', onclick: settingsDialog }, 'Zurück'),
+    foot: [h('span', { class: 'spacer' }), h('button', { class: 'btn', onclick: closeModal }, 'Abbrechen'),
       h('button', { class: 'btn primary', disabled: !p.new.length, onclick: doImport },
         p.new.length === 1 ? '1 Hersteller importieren' : p.new.length + ' Hersteller importieren')],
   });
@@ -1128,7 +1126,6 @@ async function startApp() {
 }
 
 modalCloseHooks.push(() => { state.draft = null; });
-settingsHandler = () => settingsDialog();
 
 // Baut die Oberfläche des Moduls in den Container, den das Grundgerüst vorgibt.
 function mountHersteller(root) {
@@ -1141,7 +1138,7 @@ function mountHersteller(root) {
         h('ul', { id: 'supplier-list', class: 'supplier-list' }),
         h('div', { class: 'sidebar-bottom' },
           h('button', { id: 'btn-add-supplier', class: 'btn primary grow', onclick: addSupplierDialog }, '+ Hersteller anlegen'),
-          h('button', { id: 'btn-settings', class: 'btn icon-btn', title: 'Einstellungen', 'aria-label': 'Einstellungen', onclick: settingsDialog }, icon('gear')))),
+          h('button', { id: 'btn-settings', class: 'btn icon-btn', title: 'Einstellungen', 'aria-label': 'Einstellungen', onclick: () => openSettings() }, icon('gear')))),
       h('main', { id: 'main', class: 'main' })));
   document.getElementById('search').addEventListener('input', (e) => { state.search = e.target.value; renderList(); });
   if (api) startApp(); else startDemo();

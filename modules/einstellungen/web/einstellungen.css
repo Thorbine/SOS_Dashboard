@@ -1,0 +1,9 @@
+/* Modul Einstellungen */
+.set-page { overflow-y: auto; padding: 20px 32px 48px; max-width: 980px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+.set-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.set-head h1 { font-size: 24px; font-weight: 600; }
+.set-head .spacer { flex: 1; }
+.set-section { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px 18px; display: flex; flex-direction: column; gap: 12px; scroll-margin-top: 12px; }
+.set-section > h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .6px; color: var(--brand); }
+.set-section .section-bar { margin-top: 4px; }
+.set-section .stack, .set-section .row { max-width: 100%; }

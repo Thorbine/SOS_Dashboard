@@ -1,7 +1,9 @@
 #!/bin/bash
 # Startet das SOS Dashboard ohne Terminalfenster (Doppelklick auf "SOS Dashboard.app").
 # Das Programm selbst liegt drei Ordner hoeher (neben app.py) und wird per Update erneuert.
-DIR="$(cd "$(dirname "$0")/../../.." && pwd)"
+# Auch aufrufbar ueber eine Verknuepfung (z. B. in ~/Applications): "pwd -P" loest sie auf.
+HERE="$(cd "$(dirname "$0")" && pwd -P)"
+DIR="$(cd "$HERE/../../.." && pwd -P)"
 cd "$DIR" || exit 1
 # Aus dem Finder gestartete Apps haben nur einen kleinen PATH: gaengige Python-Orte ergaenzen
 export PATH="/Library/Frameworks/Python.framework/Versions/Current/bin:/usr/local/bin:/opt/homebrew/bin:$PATH"
